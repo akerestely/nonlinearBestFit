@@ -63,7 +63,7 @@ def plot_real_data(data, from_row = None, to_row = None):
         count = to_row - from_row
         if count > 1:
             figsize = (10, 5 * count)
-    data.T.iloc[:, from_row:to_row].plot(kind="line", marker='o', subplots=True, figsize=figsize)
+    data.T.iloc[:, from_row:to_row].dropna(axis=0).plot(kind="line", marker='o', subplots=True, figsize=figsize)
 
 def plot_function(func, x: np.ndarray, y: np.ndarray):
     import matplotlib.pyplot as plt
@@ -120,28 +120,44 @@ def get_params_calculus_t(x: np.ndarray, y: np.ndarray) -> (float, float, float)
     from bestfitte import best_fit
     return best_fit(x, y)
 
-def plot_results(x: np.ndarray, y: np.ndarray, ptsStart: int = None, ptsEnd: int = None, data_id: str=""):
+def plot_results(x: np.ndarray, y: np.ndarray, ptsStart: int = 0, ptsEnd: int = None, ptsTrain: int = None, data_id: str=""):
+    """
+    :param ptsStart: use x, y values starting from this point
+    :param ptsEnd: use x, y values ending at this point
+    :param ptsTrain: use this much x, y values for training starting from ptsStart
+    """
+    ptsEnd = ptsEnd or len(x)
+    ptsTrain = ptsTrain or (ptsEnd - ptsStart)
+    if ptsStart + ptsTrain > ptsEnd:
+        raise ValueError("Invalid interval for points")
     try:
-        params1 = get_params_iterative(x[ptsStart:ptsEnd], y[ptsStart:ptsEnd])
+        params1 = get_params_iterative(x[ptsStart:ptsStart+ptsTrain], y[ptsStart:ptsStart+ptsTrain])
     except:
         params1 = None
     try:
-        params2 = get_params_calculus_t(x[ptsStart:ptsEnd], y[ptsStart:ptsEnd])
+        params2 = get_params_calculus_t(x[ptsStart:ptsStart+ptsTrain], y[ptsStart:ptsStart+ptsTrain])
     except:
         params2 = None
-    plot_methods(x, y, params1, params2, data_id)
+    plot_methods(x[ptsStart:ptsEnd], y[ptsStart:ptsEnd], params1, params2, data_id)
 
 def plot_and_get_real_data(row: int) -> (np.ndarray, np.ndarray):
     data = load_data()
     plot_real_data(data, row, row+1)
     return get_x_y(data, row)
+
 #%%
-x, y = gen_rand_points(20, alpha = 0.1, noise=400, consecutive=False)
-plot_results(x, y, ptsEnd=None, data_id='generated')
+x, y = gen_rand_points(20, alpha = 2.1, noise=10, consecutive=False)
+plot_results(x, y, ptsStart=0, ptsTrain=5, ptsEnd=20, data_id='generated')
+
+#%%
+row = 13
+x, y = plot_and_get_real_data(row)
+#%%
+plot_results(x, y, ptsStart=0, ptsTrain=5, ptsEnd=20, data_id=str(row))
 
 #%%
 data = load_data()
-data = data[data.count(axis=1) > 2]
+data = data[data.count(axis=1) > 3]
 for row_idx in data.index:
     x, y = get_x_y(data, row_idx)
-    plot_results(x, y, ptsEnd=None, data_id=str(row_idx))
+    plot_results(x, y, ptsStart=1, ptsTrain=None, data_id=str(row_idx))
