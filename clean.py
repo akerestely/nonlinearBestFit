@@ -140,6 +140,12 @@ def plot_results(x: np.ndarray, y: np.ndarray, ptsStart: int = 0, ptsEnd: int = 
         paramsNames.append("BestFit")
     except:
         pass
+    try:
+        from pseloglin import fit
+        paramsList.append(fit(x_train, y_train))
+        paramsNames.append("PseLogLin")
+    except:
+        pass
     plot_methods(x[ptsStart:ptsEnd], y[ptsStart:ptsEnd], paramsList, paramsNames, data_id)
 
 def plot_and_get_real_data(row: int) -> (np.ndarray, np.ndarray):
@@ -149,7 +155,7 @@ def plot_and_get_real_data(row: int) -> (np.ndarray, np.ndarray):
 
 #%%
 x, y = gen_rand_points(20, alpha = 2.1, noise=2, consecutive=False)
-plot_results(x, y, ptsStart=0, ptsTrain=3, ptsEnd=None, data_id='generated')
+plot_results(x, y, ptsStart=0, ptsTrain=5, ptsEnd=None, data_id='generated')
 
 #%%
 row = 13
