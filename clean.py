@@ -78,15 +78,22 @@ def plot_function(func, x: np.ndarray, y: np.ndarray):
     df["func(param)"] = pt
     print(df)
 
-def print_rmse_methods(x: np.ndarray, y: np.ndarray, paramsIter: tuple, paramsCalc:tuple):
+def print_rmse_methods(x: np.ndarray, y: np.ndarray, paramsList: list):
+    """
+    param paramsList: array of tuples, where tuple contains A, B and alpha
+    """
     from sklearn.metrics import mean_squared_error
     from math import sqrt
-    rmseIter = sqrt(mean_squared_error(y, hCG(x, *paramsIter)))
-    rmseCalc = sqrt(mean_squared_error(y, hCG(x, *paramsCalc)))
-    print(f"Iterative method RMSE: {rmseIter}")
-    print(f" Calculus method RMSE: {rmseCalc}")
+    for i, params in enumerate(paramsList):
+        rmse = sqrt(mean_squared_error(y, hCG(x, *params)))
+        print(f"Method {i} RMSE: {rmse}")
 
-def plot_methods(x: np.ndarray, y: np.ndarray, paramsIter: tuple = None, paramsCalc: tuple = None, data_id: str=""):
+def plot_methods(x: np.ndarray, y: np.ndarray, paramsList:list , paramsNames: list = [], data_id: str=""):
+    """
+    param paramsList: array of tuples, where tuple contains A, B and alpha
+    param paramsNames: array of strings, where each sting represents the name of the corresponding param tuple.
+        The names will appear on the plot. Optional, in which case the name will be the index in the array.
+    """    
     from sklearn.metrics import mean_squared_error
     from math import sqrt
 
@@ -94,31 +101,15 @@ def plot_methods(x: np.ndarray, y: np.ndarray, paramsIter: tuple = None, paramsC
     plt.xlabel(r"$time$")
     plt.ylabel(r"$hCG(time)$")
     plt.plot(x, y, 'bo', label=f"data {data_id}")
-    if paramsIter is not None:
-        rmseIter = sqrt(mean_squared_error(y, hCG(x, *paramsIter)))
-        plt.plot(x, hCG(x, *paramsIter), 'r-',
-            label='Iterative fit: A=%5.2f, B=%5.2f, alpha=%5.2f, rmse=%5.2f' % (*paramsIter, rmseIter))
-    
-    if paramsCalc is not None:
-        rmseCalc = sqrt(mean_squared_error(y, hCG(x, *paramsCalc)))
-        plt.plot(x, hCG(x, *paramsCalc), 'g-',
-            label='Calculus fit: A=%5.2f, B=%5.2f, alpha=%5.2f, rmse=%5.2f' % (*paramsCalc, rmseCalc))
+    print(paramsNames)
+    for i, params in enumerate(paramsList):
+        rmse = sqrt(mean_squared_error(y, hCG(x, *params)))
+        name = paramsNames[i] if i < len(paramsNames) else ("Method " + str(i))
+        plt.plot(x, hCG(x, *params),
+            label=f'{name}: A=%5.2f, B=%5.2f, alpha=%5.2f, rmse=%5.2f' % (*params, rmse))            
     plt.legend()
     plt.show()
-    # print_rmse_methods(x, y, paramsIter, paramsCalc)
-
-def get_params_iterative(x: np.ndarray, y: np.ndarray) -> (float, float, float):
-    from scipy.optimize import curve_fit
-    popt, _ = curve_fit(hCG, x, y)   # uses Levenberg-Marquardt iterative method
-    return tuple(popt)
-
-def get_params_calculus(x: np.ndarray, y: np.ndarray) -> (float, float, float):
-    from bestfit import best_fit
-    return best_fit(x, y)
-
-def get_params_calculus_t(x: np.ndarray, y: np.ndarray) -> (float, float, float):
-    from bestfitte import best_fit
-    return best_fit(x, y)
+    # print_rmse_methods(x, y, params, paramsCalc)
 
 def plot_results(x: np.ndarray, y: np.ndarray, ptsStart: int = 0, ptsEnd: int = None, ptsTrain: int = None, data_id: str=""):
     """
@@ -130,15 +121,26 @@ def plot_results(x: np.ndarray, y: np.ndarray, ptsStart: int = 0, ptsEnd: int = 
     ptsTrain = ptsTrain or (ptsEnd - ptsStart)
     if ptsStart + ptsTrain > ptsEnd:
         raise ValueError("Invalid interval for points")
+
+    x_train = x[ptsStart : ptsStart + ptsTrain]
+    y_train = y[ptsStart : ptsStart + ptsTrain]
+
+    paramsList = []
+    paramsNames = []
     try:
-        params1 = get_params_iterative(x[ptsStart:ptsStart+ptsTrain], y[ptsStart:ptsStart+ptsTrain])
+        from scipy.optimize import curve_fit
+        popt, _ = curve_fit(hCG, x_train, y_train)   # uses Levenberg-Marquardt iterative method
+        paramsList.append(tuple(popt))
+        paramsNames.append("Iterative")
     except:
-        params1 = None
+        pass
     try:
-        params2 = get_params_calculus_t(x[ptsStart:ptsStart+ptsTrain], y[ptsStart:ptsStart+ptsTrain])
+        from bestfitte import best_fit
+        paramsList.append(best_fit(x_train, y_train))
+        paramsNames.append("BestFit")
     except:
-        params2 = None
-    plot_methods(x[ptsStart:ptsEnd], y[ptsStart:ptsEnd], params1, params2, data_id)
+        pass
+    plot_methods(x[ptsStart:ptsEnd], y[ptsStart:ptsEnd], paramsList, paramsNames, data_id)
 
 def plot_and_get_real_data(row: int) -> (np.ndarray, np.ndarray):
     data = load_data()
@@ -146,8 +148,8 @@ def plot_and_get_real_data(row: int) -> (np.ndarray, np.ndarray):
     return get_x_y(data, row)
 
 #%%
-x, y = gen_rand_points(20, alpha = 2.1, noise=10, consecutive=False)
-plot_results(x, y, ptsStart=0, ptsTrain=5, ptsEnd=20, data_id='generated')
+x, y = gen_rand_points(20, alpha = 2.1, noise=2, consecutive=False)
+plot_results(x, y, ptsStart=0, ptsTrain=3, ptsEnd=None, data_id='generated')
 
 #%%
 row = 13
