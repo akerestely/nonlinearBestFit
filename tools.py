@@ -1,12 +1,5 @@
-#%%
-%load_ext autoreload
-#%%
-%autoreload 2
-
-#%%
 import numpy as np
 import pandas as pd
-from numpy.random import random
 
 np.random.seed(421)
 
@@ -19,6 +12,8 @@ def gen_rand_points(n: int, A: float = 1000, B: float = 3, alpha: float = 0.1, n
     :param A, B, alpha: parameters to hCG function
     :param noise: randomly add this much to the result of the hCG function
     """
+    from numpy.random import random
+
     sparsity = 1
     if consecutive is False:
         x = random(n) * n * sparsity 
@@ -156,20 +151,3 @@ def plot_and_get_real_data(row: int) -> (np.ndarray, np.ndarray):
 def get_real_data(row: int) -> (np.ndarray, np.ndarray):
     data = load_data()
     return get_x_y(data, row)
-
-#%%
-x, y = gen_rand_points(20, alpha = 2.1, noise=2, consecutive=False)
-plot_results(x, y, ptsStart=0, ptsTrain=5, ptsEnd=None, data_id='generated')
-
-#%%
-row = 13
-x, y = plot_and_get_real_data(row)
-#%%
-plot_results(x, y, ptsStart=0, ptsTrain=5, ptsEnd=20, data_id=str(row))
-
-#%%
-data = load_data()
-data = data[data.count(axis=1) > 3]
-for row_idx in data.index:
-    x, y = get_x_y(data, row_idx)
-    plot_results(x, y, ptsStart=1, ptsTrain=None, data_id=str(row_idx))
