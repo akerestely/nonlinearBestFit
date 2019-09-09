@@ -106,7 +106,7 @@ def plot_methods(x: np.ndarray, y: np.ndarray, paramsList:list , paramsNames: li
         rmse = sqrt(mean_squared_error(y, hCG(x, *params)))
         name = paramsNames[i] if i < len(paramsNames) else ("Method " + str(i))
         plt.plot(x, hCG(x, *params),
-            label=f'{name}: A=%5.2f, B=%5.2f, alpha=%5.2f, rmse=%5.2f' % (*params, rmse))            
+            label=f'{name}: A=%5.2f, B=%5.2f, alpha=%5.2f, rmse=%5.2f' % (*params, rmse))
     plt.legend()
     plt.show()
     # print_rmse_methods(x, y, params, paramsCalc)
@@ -151,6 +151,10 @@ def plot_results(x: np.ndarray, y: np.ndarray, ptsStart: int = 0, ptsEnd: int = 
 def plot_and_get_real_data(row: int) -> (np.ndarray, np.ndarray):
     data = load_data()
     plot_real_data(data, row, row+1)
+    return get_x_y(data, row)
+
+def get_real_data(row: int) -> (np.ndarray, np.ndarray):
+    data = load_data()
     return get_x_y(data, row)
 
 #%%
