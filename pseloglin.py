@@ -1,3 +1,5 @@
+# compute best fit parameters using pseudo log-linear algorithm
+
 import numpy as np
 
 def fit(x: np.ndarray, y: np.ndarray, ptsForB: int = 1, plotLinreg = False):
