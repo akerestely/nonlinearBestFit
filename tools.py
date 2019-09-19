@@ -151,3 +151,23 @@ def plot_and_get_real_data(row: int) -> (np.ndarray, np.ndarray):
 def get_real_data(row: int) -> (np.ndarray, np.ndarray):
     data = load_data()
     return get_x_y(data, row)
+
+def plot_with_inner_plot(x: np.ndarray, y: np.ndarray, limX1: float, limX2: float, limY1: float, limY2: float, zoom: float = 2.5, loc='upper right'):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    ax.scatter(x, y)
+    plt.xlabel("$time$")
+    plt.ylabel("$hCG(time)$")
+
+    from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+    axins = zoomed_inset_axes(ax, zoom, loc=loc)
+    axins.scatter(x, y)
+
+    axins.set_xlim(limX1, limX2)
+    axins.set_ylim(limY1, limY2)
+
+    #plt.yticks(visible=False)
+    #plt.xticks(visible=False)
+
+    from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+    mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")

@@ -12,9 +12,13 @@ x, y = tools.gen_rand_points(20, alpha = 2.1, noise=2, consecutive=False)
 tools.plot_results(x, y, ptsStart=0, ptsTrain=5, ptsEnd=None, data_id='generated')
 
 #%%
+# plot a data sample, with the first few values zoomed in
+x, y = tools.get_real_data(row = 24)
+tools.plot_with_inner_plot(x, y, 0.5, 6.5, 0, 6000)
+
+#%%
 # load real data sample
-row = 23
-x, y = tools.plot_and_get_real_data(row)
+x, y = tools.plot_and_get_real_data(row = 23)
 #%%
 # than compute and plot best fit curves using a subset of the data points
 tools.plot_results(x, y, ptsStart=0, ptsTrain=5, ptsEnd=20, data_id=str(row))
