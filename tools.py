@@ -36,7 +36,7 @@ def gen_rand_points_and_plot(n: int, A: float, B: float, alpha: float, noise: fl
     return x, y
 
 def load_data(required_data_points: int = 3) -> pd.DataFrame:
-    url = "measurements.csv"
+    url = "data/measurements.csv"
     data = pd.read_csv(url)
 
     # remove unused columns
