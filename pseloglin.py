@@ -2,7 +2,7 @@
 
 import numpy as np
 
-def fit(x: np.ndarray, y: np.ndarray, ptsForB: int = 1, plotLinreg = False):
+def fit(x: np.ndarray, y: np.ndarray, ptsForB: int = 2, plotLinreg = False):
     '''
     param ptsForB: use this much points from end of data for calculating B,
         and also exclude this much points when calculating A and alpha
@@ -10,6 +10,9 @@ def fit(x: np.ndarray, y: np.ndarray, ptsForB: int = 1, plotLinreg = False):
     from scipy.stats import linregress
     slope, intercept, r_value, p_value, std_err = linregress(x[:-ptsForB], np.log(y[:-ptsForB]))
     
+    if np.isnan(slope) or np.isnan(intercept):
+        raise ArithmeticError("Determined A or alpha value is NaN")
+
     if plotLinreg:
         import matplotlib.pyplot as plt
         plt.scatter(x, np.log(y))
