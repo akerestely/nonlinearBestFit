@@ -1,3 +1,3 @@
 # Nonlinear Best Fit
 
-Start from [tests.py](tests.py).
+Start from [synthetic.py](synthetic.py) or [synthetic.ipynb](synthetic.ipynb).

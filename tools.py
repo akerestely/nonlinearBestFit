@@ -6,7 +6,7 @@ np.random.seed(421)
 def hCG(x: np.ndarray, A: float, B: float, alpha: float):
     return A * np.exp(-alpha * x) + B
 
-def gen_rand_points(n: int, A: float = 1000, B: float = 3, alpha: float = 0.1, noise: float = 2, consecutive: bool = False):
+def gen_rand_points(n: int, A: float = 1000, B: float = 3, alpha: float = 0.01, noise: float = 2, consecutive: bool = False):
     """
     :param n: number of points to generate
     :param A, B, alpha: parameters to hCG function
@@ -26,7 +26,16 @@ def gen_rand_points(n: int, A: float = 1000, B: float = 3, alpha: float = 0.1, n
     y += ynoise
     return x, y
 
-def load_data() -> pd.DataFrame:
+def gen_rand_points_and_plot(n: int, A: float, B: float, alpha: float, noise: float, consecutive: bool):
+    x, y = gen_rand_points(20, A = 1000, B = 3, alpha = 1, noise=0, consecutive=False)
+    import matplotlib.pyplot as plt
+    plt.scatter(x, y)
+    plt.xlabel("$time$")
+    plt.ylabel("$hCG(time)$")
+    plt.show()
+    return x, y
+
+def load_data(required_data_points: int = 3) -> pd.DataFrame:
     url = "measurements.csv"
     data = pd.read_csv(url)
 
@@ -44,6 +53,8 @@ def load_data() -> pd.DataFrame:
 
     # rename columns
     data.columns = pd.Series(data.columns).apply(name_to_weekcount)
+    # discard entries which have less than required_data_points measurements 
+    data = data[data.count(axis=1) > required_data_points]
     return data
 
 def get_x_y(data: pd.DataFrame, row: int) -> (np.ndarray, np.ndarray) :
@@ -67,12 +78,6 @@ def plot_function(func, x: np.ndarray, y: np.ndarray):
     plt.plot(range_param, pt)
     plt.show()
 
-    import pandas as pd
-    df = pd.DataFrame(columns=["t", "p(t)"])
-    df["param"] = range_param
-    df["func(param)"] = pt
-    print(df)
-
 def print_rmse_methods(x: np.ndarray, y: np.ndarray, paramsList: list):
     """
     param paramsList: array of tuples, where tuple contains A, B and alpha
@@ -83,7 +88,7 @@ def print_rmse_methods(x: np.ndarray, y: np.ndarray, paramsList: list):
         rmse = sqrt(mean_squared_error(y, hCG(x, *params)))
         print(f"Method {i} RMSE: {rmse}")
 
-def plot_methods(x: np.ndarray, y: np.ndarray, paramsList:list , paramsNames: list = [], data_id: str=""):
+def plot_methods(x: np.ndarray, y: np.ndarray, paramsList:list , paramsNames: list = [], data_id: str="", showPlot: bool = True):
     """
     param paramsList: array of tuples, where tuple contains A, B and alpha
     param paramsNames: array of strings, where each sting represents the name of the corresponding param tuple.
@@ -96,17 +101,18 @@ def plot_methods(x: np.ndarray, y: np.ndarray, paramsList:list , paramsNames: li
     plt.xlabel(r"$time$")
     plt.ylabel(r"$hCG(time)$")
     plt.plot(x, y, 'bo', label=f"data {data_id}")
-    print(paramsNames)
+    #print(paramsNames)
     for i, params in enumerate(paramsList):
         rmse = sqrt(mean_squared_error(y, hCG(x, *params)))
         name = paramsNames[i] if i < len(paramsNames) else ("Method " + str(i))
         plt.plot(x, hCG(x, *params),
             label=f'{name}: A=%5.2f, B=%5.2f, alpha=%5.2f, rmse=%5.2f' % (*params, rmse))
     plt.legend()
-    plt.show()
+    if showPlot:
+        plt.show()
     # print_rmse_methods(x, y, params, paramsCalc)
 
-def plot_results(x: np.ndarray, y: np.ndarray, ptsStart: int = 0, ptsEnd: int = None, ptsTrain: int = None, data_id: str=""):
+def plot_results(x: np.ndarray, y: np.ndarray, ptsStart: int = 0, ptsEnd: int = None, ptsTrain: int = None, data_id: str="", showPlot:bool = True, allAlgorithms:bool = True):
     """
     :param ptsStart: use x, y values starting from this point
     :param ptsEnd: use x, y values ending at this point
@@ -122,26 +128,30 @@ def plot_results(x: np.ndarray, y: np.ndarray, ptsStart: int = 0, ptsEnd: int = 
 
     paramsList = []
     paramsNames = []
-    try:
-        from scipy.optimize import curve_fit
-        popt, _ = curve_fit(hCG, x_train, y_train)   # uses Levenberg-Marquardt iterative method
-        paramsList.append(tuple(popt))
-        paramsNames.append("Iterative")
-    except:
-        pass
+    if allAlgorithms:
+        try:
+            from scipy.optimize import curve_fit
+            popt, _ = curve_fit(hCG, x_train, y_train)   # uses Levenberg-Marquardt iterative method
+            paramsList.append(tuple(popt))
+            paramsNames.append("Iterative")
+        except:
+            pass
+
     try:
         from bestfitte import best_fit
         paramsList.append(best_fit(x_train, y_train))
         paramsNames.append("BestFit")
     except:
         pass
-    try:
-        from pseloglin import fit
-        paramsList.append(fit(x_train, y_train))
-        paramsNames.append("PseLogLin")
-    except:
-        pass
-    plot_methods(x[ptsStart:ptsEnd], y[ptsStart:ptsEnd], paramsList, paramsNames, data_id)
+
+    if allAlgorithms:
+        try:
+            from pseloglin import fit
+            paramsList.append(fit(x_train, y_train))
+            paramsNames.append("PseLogLin")
+        except:
+            pass
+    plot_methods(x[ptsStart:ptsEnd], y[ptsStart:ptsEnd], paramsList, paramsNames, data_id, showPlot)
 
 def plot_and_get_real_data(row: int) -> (np.ndarray, np.ndarray):
     data = load_data()
@@ -171,3 +181,127 @@ def plot_with_inner_plot(x: np.ndarray, y: np.ndarray, limX1: float, limX2: floa
 
     from mpl_toolkits.axes_grid1.inset_locator import mark_inset
     mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+
+def find_and_plot_best_fit(x: np.ndarray, y: np.ndarray):
+    import bestfitte
+    A, B, alpha = bestfitte.best_fit(x, y)
+    from sklearn.metrics import mean_squared_error
+    rmse = np.sqrt(mean_squared_error(y, hCG(x, A, B, alpha)))
+    import matplotlib.pyplot as plt
+    plt.scatter(x, y, label='data')
+    plt.plot(x, hCG(x, A, B, alpha),
+                label=f'A=%5.2f, B=%5.2f, alpha=%5.2f, rmse=%5.2f' % (A, B, alpha, rmse))
+    plt.legend()
+    plt.show()
+
+def find_and_plot_best_fit_param_noise_grid(paramsList, noises):
+    import matplotlib.pyplot as plt
+    plt.figure(figsize = (20, 10))
+
+    for i, params in enumerate(paramsList):
+        for j, noise in enumerate(noises):
+            n:int = 20
+            x, y = gen_rand_points(n, *params, noise)
+            plt.subplot(len(paramsList), len(noises), i * len(noises) + j + 1)
+            plt.scatter(x, y)
+
+            import bestfitte
+            A, B, alpha = bestfitte.best_fit(x, y)
+            from sklearn.metrics import mean_squared_error
+            rmse = np.sqrt(mean_squared_error(y, hCG(x, A, B, alpha)))
+            import matplotlib.pyplot as plt
+            plt.scatter(x, y)
+            plt.plot(np.arange(n), hCG(np.arange(n), A, B, alpha), 
+            label=f'A=%5.2f, B=%5.2f, alpha=%5.2f, noise=%5.2f, \nA=%5.2f, B=%5.2f, alpha=%5.2f, rmse=%5.2f' % (*params, noise, A, B, alpha, rmse))
+            plt.legend()
+
+def compare_results_on_datasets(datasets: list):
+    '''
+        datasets parameter is a list of datasets which contain (x_data, y_data, dataset_name) tuples
+    '''
+    import matplotlib.pyplot as plt
+    plt.figure(figsize = (9*len(datasets), 5))
+
+    for i, dataset in enumerate(datasets):
+        x, y, name = dataset
+        plt.subplot(1, len(datasets), i + 1)
+        plot_results(x, y, data_id = name, showPlot=False)
+
+def compare_time_on_datasets(datasets: list = None):
+    '''
+        datasets parameter is a list of datasets which contain (x_data, y_data, dataset_name) tuples
+            if omitted, 10 random dataset will be generated
+    '''
+
+    if datasets is None:
+        # generate 10 random datasets
+        paramsList = []
+        for _ in range(10):
+            paramsList.append((
+                np.random.random_integers(3, 20), #n
+                np.random.random() * 1e3, # A
+                np.random.random() * 1e1, # B
+                np.random.random() * 1e1, # alpha
+                np.random.random() * 1 # noise
+            ))
+        datasets = []
+        for params in paramsList:
+            datasets.append(gen_rand_points(*params) +
+            (f'n=%d, A=%5.2f, B=%5.2f, alpha=%5.2f, noise=%5.2f' % params,))
+
+    from scipy.optimize import curve_fit
+    from bestfitte import best_fit
+    from pseloglin import fit
+    from time import perf_counter
+
+    rows = []
+    for dataset in datasets:
+        x, y, name = dataset
+        measurements = {'Dataset' : name}
+
+        start = perf_counter()
+        try:
+            curve_fit(hCG, x, y)        
+            end = perf_counter()
+            measurements["Iterative"] = end - start
+        except:
+            measurements["Iterative"] = np.nan
+        
+        start = perf_counter()
+        try:
+            best_fit(x, y)
+            end = perf_counter()
+            measurements["BestFit"] = end - start
+        except:
+            measurements["BestFit"] = np.nan
+
+        start = perf_counter()
+        try:
+            fit(x, y)
+            end = perf_counter()
+            measurements["PseLogLin"] = end - start
+        except:
+            measurements["PseLogLin"] = np.nan
+            
+        rows.append(measurements)
+    
+    import pandas as pd
+    df = pd.DataFrame(rows, columns=["Dataset", "Iterative", "BestFit", "PseLogLin"])
+    df.loc['mean'] = df.mean()
+    df["Dataset"].values[-1] = "Mean"
+    #print(df.to_latex(index=False))
+    return df
+
+def compare_with_less_trained(x: np.ndarray, y: np.ndarray, trainPoints):
+    '''
+    trainPoints, array with the number of points to use for train on each subplot
+    '''
+    import matplotlib.pyplot as plt
+    plt.figure(figsize = (9 * len(trainPoints), 10))
+    plt.subplot(2, len(trainPoints), len(trainPoints) / 2 + 1)
+    plot_results(x, y, showPlot=False, allAlgorithms=False, data_id="All")
+
+    for i, ptsTrain in enumerate(trainPoints):
+        plt.subplot(2, len(trainPoints), len(trainPoints) + i + 1)
+        plot_results(x, y, ptsTrain = ptsTrain, showPlot=False, allAlgorithms=False, data_id=str(ptsTrain) + " points")
+        plt.plot(x[ptsTrain:], y[ptsTrain:], "o", color="orange")
