@@ -21,5 +21,5 @@ def fit(x: np.ndarray, y: np.ndarray, ptsForB: int = 2, plotLinreg = False):
 
     A = np.exp(intercept)
     alpha = -slope
-    B = np.sum(y[-ptsForB] - A * np.exp(-alpha*x[-ptsForB]))
+    B = np.mean(y[-ptsForB] - A * np.exp(-alpha*x[-ptsForB]))
     return (A, B, alpha)
