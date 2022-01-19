@@ -18,8 +18,8 @@ def fit(x: np.ndarray, y: np.ndarray, ptsForB: int = 2, plotLinreg = False):
         plt.scatter(x, np.log(y))
         plt.plot(x, intercept + slope * x)
         plt.show()
-
+    
     A = np.exp(intercept)
     alpha = -slope
-    B = np.mean(y[-ptsForB] - A * np.exp(-alpha*x[-ptsForB]))
+    B = np.mean(y[-ptsForB:] - A * np.exp(-alpha*x[-ptsForB:]))
     return (A, B, alpha)
